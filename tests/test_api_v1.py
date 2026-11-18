@@ -61,3 +61,32 @@ def test_openai_compatible_chat_completion(client, monkeypatch):
 def test_api_key_admin_requires_master_token(client):
     assert client.post("/api/keys", json={"name": "No auth"}).status_code == 401
     assert client.get("/api/keys").status_code == 401
+
+
+
+def test_per_key_rate_limit_and_usage_report(client, monkeypatch):
+    monkeypatch.setattr(api_v1, "SAFWAN_API_RPM", 2)
+    admin = {"Authorization": "Bearer test-admin-secret"}
+    created = client.post(
+        "/api/keys", headers=admin, json={"name": "Limited integration"}
+    )
+    key = created.json()["key"]
+    headers = {"Authorization": "Bearer " + key}
+
+    assert client.get("/v1/models", headers=headers).status_code == 200
+    assert client.get("/v1/models", headers=headers).status_code == 200
+    blocked = client.get("/v1/models", headers=headers)
+    assert blocked.status_code == 429
+    assert blocked.headers["Retry-After"] == "60"
+
+    report = client.get("/api/usage?hours=24", headers=admin)
+    assert report.status_code == 200
+    data = report.json()
+    assert data["total_requests"] == 3
+    assert data["rate_limit_per_key_per_minute"] == 2
+    assert data["by_api_key"][0]["requests"] == 3
+    assert data["by_api_key"][0]["rate_limited"] == 1
+
+
+def test_usage_report_requires_admin_token(client):
+    assert client.get("/api/usage").status_code == 401

@@ -188,3 +188,18 @@ This is lightweight keyword-based routing, not an intelligent benchmark or a gua
 - All evaluation endpoints require SAFWAN_APP_TOKEN. The compare endpoint calls only models already installed in the configured Ollama server.
 
 Scores use answer length, overlap with prompt terms, basic structure, and clarity proxies. When an expected answer is supplied, the API also reports term overlap with that reference. These are not factuality, safety, or benchmark scores; human review and a trusted test dataset are still required to measure correctness. Model comparison can consume significant local RAM/VRAM and time, so compare a small number of models.
+
+
+## Phase 10: Human-reviewed training dataset
+
+SAFWAN AI can collect question/ideal-answer pairs as a private training dataset. New examples start as drafts; only explicitly approved examples are included in the JSONL export. Editing an example automatically returns it to draft so it must be reviewed again.
+
+All endpoints require the master \`SAFWAN_APP_TOKEN\`:
+- \`POST /api/training-data\` — create a draft pair.
+- \`GET /api/training-data?status=draft\` — list and count draft, approved, and rejected examples.
+- \`PATCH /api/training-data/{id}\` — edit a pair (resets status to draft).
+- \`PATCH /api/training-data/{id}/status\` — set \`draft\`, \`approved\`, or \`rejected\`.
+- \`DELETE /api/training-data/{id}\` — delete an example.
+- \`GET /api/training-data/export.jsonl\` — download approved examples only in chat-messages JSONL format.
+
+This phase prepares data only; it does not fine-tune or train a model. Review every example for correctness, quality, permission, and personal or confidential information before approval. There is no automatic PII detector, so do not upload sensitive data. Fine-tuning still requires a chosen compatible base model, adequate clean examples, GPU/compute resources, and a separate training workflow.

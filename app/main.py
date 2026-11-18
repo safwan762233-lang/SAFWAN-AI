@@ -3,6 +3,8 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 from .config import SAFWAN_APP_TOKEN, OLLAMA_MODEL, OLLAMA_BASE_URL
+from .auth import router as auth_router
+from .auth_core import require_admin
 from .db import connect, init_db
 from .ollama import chat, list_models, OllamaError
 from .business import router as business_router, get_business_context_data
@@ -16,6 +18,7 @@ from .training_data import router as training_data_router
 from .config import SAFWAN_CODING_MODEL, SAFWAN_REASONING_MODEL, SAFWAN_FALLBACK_MODEL
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
+app.include_router(auth_router)
 app.include_router(business_router)
 app.include_router(api_v1_router)
 app.include_router(knowledge_router)
@@ -28,8 +31,7 @@ def startup():
     init_db()
 
 def authorize(authorization: Optional[str]):
-    if SAFWAN_APP_TOKEN and authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Unauthorized")
+    require_admin(authorization)
 
 class ChatInput(BaseModel):
     message: str = Field(min_length=1, max_length=12000)

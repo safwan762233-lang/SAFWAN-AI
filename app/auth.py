@@ -52,6 +52,7 @@ def setup_owner(body: SetupInput, authorization: Optional[str] = Header(default=
     if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
         raise HTTPException(401, "Master token required")
     with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
         count = con.execute("SELECT COUNT(*) FROM auth_users").fetchone()[0]
         if count:
             raise HTTPException(409, "An owner account already exists")

@@ -8,7 +8,7 @@ from .auth_core import require_admin
 router = APIRouter(prefix="/api/business", tags=["business"])
 
 def guard(authorization: Optional[str]):
-    require_admin(authorization)
+    require_admin(authorization, legacy_token=SAFWAN_APP_TOKEN)
 
 class CustomerIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)

@@ -63,3 +63,38 @@ The default setup is for local development only. Keep it bound to `127.0.0.1`. T
 
 ## Not implemented yet
 Multi-user accounts, billing, roles, audit logs, document RAG, grounded web research with citations, voice, agent actions, native Android app, and enterprise integrations remain roadmap items, not working features.
+
+
+## SAFWAN AI API v1 (first-party API gateway)
+
+SAFWAN AI now exposes its own API namespace. Client applications use SAFWAN-issued API keys; requests are processed by the self-hosted Ollama model configured by the operator. No paid external AI API is used.
+
+### Enable API key administration
+
+Set a strong, private `SAFWAN_APP_TOKEN` in `.env` before starting the server. This master token is only for creating, listing, and revoking API keys; never give it to client applications.
+
+### API key administration
+
+Use the master token as a Bearer token:
+
+- `POST /api/keys` with JSON `{"name":"My integration"}` creates a key.
+- `GET /api/keys` lists key names, prefixes, and status (never the full secret).
+- `DELETE /api/keys/{id}` revokes a key.
+
+The full API key is returned only once when created. Store it securely. The database stores a SHA-256 hash, not the raw key.
+
+### Client API
+
+- `GET /v1/models` lists the public model alias `safwan-local`.
+- `POST /v1/chat/completions` accepts an OpenAI-style JSON request with `model` and `messages` (currently `user` and `assistant` roles; non-streaming only).
+
+Example request:
+
+```bash
+curl http://127.0.0.1:8000/v1/chat/completions \\
+  -H "Authorization: Bearer safwan_YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"safwan-local","messages":[{"role":"user","content":"Summarize my business priorities."}]}'
+```
+
+The SAFWAN API is an application API and model gateway, not a newly trained foundation model. At this stage inference still runs on the operator's configured local/self-hosted Ollama model. Streaming, usage billing, per-key rate limits, tenant isolation, and production-grade account management are not implemented yet. Keep the service private until the security roadmap is completed.

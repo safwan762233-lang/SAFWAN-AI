@@ -127,3 +127,16 @@ The Knowledge Base section supports private uploads of TXT, Markdown, PDF, and D
 - `DELETE /api/knowledge/documents/{id}` — delete a document and its chunks.
 
 This first version uses local keyword-overlap retrieval, not vector embeddings or semantic search. Scanned/image-only PDFs may produce no extractable text; OCR is not included. Files are stored as extracted text in SQLite rather than retained as original file binaries. Do not upload sensitive documents until the deployment has proper user authentication, access controls, encryption, and backups.
+
+
+## Phase 5: Local semantic knowledge search
+
+The Knowledge Base supports local semantic + keyword hybrid retrieval using Ollama embeddings. No hosted embedding API is used.
+
+1. Install an embedding model locally: `ollama pull nomic-embed-text`
+2. Set `SAFWAN_EMBEDDING_MODEL=nomic-embed-text` in `.env` (or choose another Ollama embedding model).
+3. Restart SAFWAN AI.
+4. Upload documents as usual. Upload continues if the embedding model is unavailable, but those chunks use keyword search until indexed.
+5. Use the Knowledge Base search UI or ask questions in chat. Search combines cosine similarity from local embeddings with keyword overlap when vectors are available.
+
+Admin endpoint: `POST /api/knowledge/reindex` creates embeddings for older chunks that do not have them. Document listing reports `embedded_chunks`. The database stores vectors as JSON in SQLite and ranks them in Python; this is a lightweight MVP, not a dedicated vector database. If Ollama or the embedding model is unavailable, search falls back to keyword matching. Scanned PDFs still require OCR, which is not included.

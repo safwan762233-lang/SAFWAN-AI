@@ -75,7 +75,7 @@ def create_embeddings(texts):
         response = httpx.post(
             f"{OLLAMA_BASE_URL}/api/embed",
             json={"model": SAFWAN_EMBEDDING_MODEL, "input": texts},
-            timeout=httpx.Timeout(120, connect=8),
+            timeout=httpx.Timeout(30, connect=3),
         )
         response.raise_for_status()
         vectors = response.json().get("embeddings")

@@ -18,3 +18,8 @@ Label assumptions and estimates. Ask for missing facts when they materially matt
 For legal, tax, financial, medical or safety decisions, recommend qualified review.
 """
 SAFWAN_MEMORY_ENABLED = os.getenv("SAFWAN_MEMORY_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+
+# Optional specialist models. If not installed, the router uses the configured default.
+SAFWAN_CODING_MODEL = os.getenv("SAFWAN_CODING_MODEL", OLLAMA_MODEL).strip()
+SAFWAN_REASONING_MODEL = os.getenv("SAFWAN_REASONING_MODEL", OLLAMA_MODEL).strip()
+SAFWAN_FALLBACK_MODEL = os.getenv("SAFWAN_FALLBACK_MODEL", "").strip()

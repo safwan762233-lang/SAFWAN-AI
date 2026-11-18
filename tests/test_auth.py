@@ -37,7 +37,7 @@ def test_owner_setup_login_me_and_logout(tmp_path, monkeypatch):
     })
     assert login.status_code == 200
     token = login.json()["access_token"]
-    assert token and token not in login.text
+    assert token
     headers = {"Authorization": f"Bearer {token}"}
 
     profile = client.get("/api/auth/me", headers=headers)

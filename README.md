@@ -178,3 +178,13 @@ Optional environment settings (each value must exactly match a name shown by the
 The router records task, model, success/failure, and duration in the local SQLite database. The authenticated GET /api/model-router/status endpoint reports installed models, routing preferences, and usage summaries. Model preferences do not download models automatically. Install any model yourself with Ollama and confirm its exact tag with ollama list.
 
 This is lightweight keyword-based routing, not an intelligent benchmark or a guarantee that a specialist model is better. The default model remains the safe fallback. All inference stays on the configured Ollama server; SAFWAN still does not contain a newly trained foundation model.
+
+
+## Phase 9: Evaluation engine
+
+- POST /api/evaluations/score evaluates a supplied prompt and answer with transparent heuristic signals.
+- POST /api/evaluations/compare runs the same prompt against 1–4 installed Ollama models and returns their answers, heuristic signals, and response times.
+- GET /api/evaluations returns recent evaluation history and aggregate score/time summaries.
+- All evaluation endpoints require SAFWAN_APP_TOKEN. The compare endpoint calls only models already installed in the configured Ollama server.
+
+Scores use answer length, overlap with prompt terms, basic structure, and clarity proxies. When an expected answer is supplied, the API also reports term overlap with that reference. These are not factuality, safety, or benchmark scores; human review and a trusted test dataset are still required to measure correctness. Model comparison can consume significant local RAM/VRAM and time, so compare a small number of models.

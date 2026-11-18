@@ -203,3 +203,25 @@ All endpoints require the master \`SAFWAN_APP_TOKEN\`:
 - \`GET /api/training-data/export.jsonl\` — download approved examples only in chat-messages JSONL format.
 
 This phase prepares data only; it does not fine-tune or train a model. Review every example for correctness, quality, permission, and personal or confidential information before approval. There is no automatic PII detector, so do not upload sensitive data. Fine-tuning still requires a chosen compatible base model, adequate clean examples, GPU/compute resources, and a separate training workflow.
+
+
+## Phase 12: Optional LoRA fine-tuning pipeline
+
+The optional \`scripts/train_lora.py\` pipeline converts the approved SAFWAN JSONL export into a LoRA adapter for a compatible Hugging Face instruction model. It does not train a foundation model from scratch and does not automatically replace the Ollama model used by SAFWAN chat.
+
+**Important hardware and platform requirements**
+- Run this optional workflow in a separate Linux environment with a compatible NVIDIA CUDA GPU. The script intentionally stops if CUDA is unavailable; CPU training is not attempted.
+- Install a PyTorch build that matches the machine's CUDA setup first, then install \`requirements-training.txt\`. These packages are not part of the normal SAFWAN web-app requirements.
+- The default base model is \`Qwen/Qwen2.5-3B-Instruct\`. Check the model's current license, access terms, and commercial-use conditions before use.
+- GPU VRAM needs vary with model size, sequence length, and batch settings. Check available VRAM before attempting training; no specific GPU capacity is guaranteed by this starter script.
+- The script requires at least 20 unique reviewed examples as a basic safety gate. This is not a claim that 20 examples are enough for a useful production model; quality and diversity matter much more.
+
+**Workflow**
+1. In SAFWAN AI, review and approve only accurate, permitted, non-sensitive examples.
+2. Download the approved \`safwan-training-approved.jsonl\` file from Training Dataset.
+3. Validate the file first: \`python scripts/train_lora.py --data safwan-training-approved.jsonl --validate-only\`
+4. In a separate supported Linux CUDA environment, install PyTorch for that CUDA version and then run \`pip install -r requirements-training.txt\`.
+5. Start a small experiment: \`python scripts/train_lora.py --data safwan-training-approved.jsonl --model Qwen/Qwen2.5-3B-Instruct --output ./safwan-lora-adapter\`
+6. Evaluate the adapter on a separate held-out test set before considering deployment.
+
+The output is a LoRA adapter, not a complete model. SAFWAN's Ollama runtime does not automatically load this adapter. A separate conversion/serving integration and evaluation are required before using it in chat. Do not train on private customer records, passwords, API keys, or personal information.

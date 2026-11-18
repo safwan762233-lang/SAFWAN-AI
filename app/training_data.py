@@ -6,14 +6,12 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from .config import SAFWAN_APP_TOKEN
 from .db import connect
+from .auth_core import require_admin
 
 router = APIRouter()
 
 def _authorize(authorization: Optional[str]):
-    if not SAFWAN_APP_TOKEN:
-        raise HTTPException(503, "Training data management is disabled: set SAFWAN_APP_TOKEN first")
-    if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Unauthorized")
+    require_admin(authorization)
 
 class ExampleInput(BaseModel):
     prompt: str = Field(min_length=1, max_length=12000)

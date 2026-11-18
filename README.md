@@ -281,3 +281,15 @@ A trained PEFT adapter is not a standalone model. The deployment-preparation scr
 8. After confirming the model works, set `OLLAMA_MODEL=safwan-finetuned` in SAFWAN's `.env`. Restart SAFWAN AI. The existing model router will use this installed model as its general/default model; coding and reasoning preferences can be set to the same exact Ollama model name if desired.
 
 GGUF conversion/import compatibility depends on the model architecture and llama.cpp/Ollama versions. Do not assume that a Qwen adapter can be loaded directly through Ollama's Safetensors ADAPTER path: the documented Safetensors adapter architecture list is limited, and adapter support may differ by Ollama release. The merged GGUF route avoids depending on direct adapter loading. Keep the base model, adapter, merged model, and GGUF until deployment and evaluation are complete. Re-run the held-out evaluation and human review after conversion; successful import does not prove the fine-tune is better. Check the base model's license before commercial use or redistribution.
+
+
+## Phase 16: Model deployment and quality dashboard
+
+The Model Deployment page in the SAFWAN web UI provides an admin-only view of models currently installed in the configured Ollama server and evaluation history grouped by model. It also lets an administrator run a prompt against up to four installed models and compare their answers, heuristic scores, and response latency.
+
+- `GET /api/deployment/status` — reports Ollama connectivity, installed model names, evaluation averages by model, and the ten most recent evaluations. Requires `SAFWAN_APP_TOKEN`.
+- The dashboard uses the same master-token connection as API Management.
+- Comparison requests use the existing `POST /api/evaluations/compare` endpoint and only run models already installed in Ollama.
+- The comparison endpoint evaluates each model sequentially. A slow model can take several minutes; this is not a throughput or load test.
+- Average scores are heuristic indicators, not factuality, safety, or benchmark measurements. Review answers manually and use a held-out test set before choosing a model for deployment.
+- Installed in Ollama means the model is available to the configured runtime; it does not prove the model is fine-tuned, correctly licensed, or production-ready.

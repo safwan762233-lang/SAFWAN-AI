@@ -11,7 +11,7 @@ def _fake_embeddings(texts):
         lowered = text.lower()
         if "company policy" in lowered or "remote work" in lowered or "fridays" in lowered:
             vectors.append([1.0, 0.0, 0.0])
-        elif "vacation" in lowered or "annual leave" in lowered:
+        elif "vacation" in lowered or "annual leave" in lowered or "take off" in lowered or "days" in lowered:
             vectors.append([0.0, 1.0, 0.0])
         else:
             vectors.append([0.8, 0.1, 0.0])

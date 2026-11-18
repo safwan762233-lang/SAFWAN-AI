@@ -75,15 +75,24 @@ def main():
         )
         inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
         row = {"index": index, "reference": reference}
-        for label, model in (("base", base), ("adapter", adapter)):
+        for label in ("base", "adapter"):
             started = time.perf_counter()
             with torch.inference_mode():
-                output = model.generate(
-                    **inputs,
-                    max_new_tokens=args.max_new_tokens,
-                    do_sample=False,
-                    pad_token_id=tokenizer.pad_token_id,
-                )
+                if label == "base":
+                    with adapter.disable_adapter():
+                        output = adapter.generate(
+                            **inputs,
+                            max_new_tokens=args.max_new_tokens,
+                            do_sample=False,
+                            pad_token_id=tokenizer.pad_token_id,
+                        )
+                else:
+                    output = adapter.generate(
+                        **inputs,
+                        max_new_tokens=args.max_new_tokens,
+                        do_sample=False,
+                        pad_token_id=tokenizer.pad_token_id,
+                    )
             elapsed = time.perf_counter() - started
             generated = tokenizer.decode(
                 output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True

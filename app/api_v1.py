@@ -168,7 +168,7 @@ async def chat_completions(
         context = build_intelligence_context(last_user_message)
         if last_user_message:
             remember(last_user_message, category="api_conversation")
-        answer, used_model = await chat(messages, OLLAMA_MODEL, context)
+        answer, used_model = await chat(messages, None, context)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
     return {

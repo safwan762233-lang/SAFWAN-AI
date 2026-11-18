@@ -1,0 +1,8 @@
+# Optional fine-tuning dependencies. Install only in a separate Linux CUDA environment.
+# Install a PyTorch build matching your CUDA driver first: https://pytorch.org/get-started/locally/
+torch>=2.4,<3
+transformers>=4.46,<5
+datasets>=3,<4
+peft>=0.13,<1
+accelerate>=1,<2
+bitsandbytes>=0.45,<1

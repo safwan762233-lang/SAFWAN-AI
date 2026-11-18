@@ -225,3 +225,20 @@ The optional \`scripts/train_lora.py\` pipeline converts the approved SAFWAN JSO
 6. Evaluate the adapter on a separate held-out test set before considering deployment.
 
 The output is a LoRA adapter, not a complete model. SAFWAN's Ollama runtime does not automatically load this adapter. A separate conversion/serving integration and evaluation are required before using it in chat. Do not train on private customer records, passwords, API keys, or personal information.
+
+
+### Phase 13: Held-out validation split
+
+Before fine-tuning, split the approved JSONL export into separate training and validation files:
+
+\`\`\`bash
+python scripts/split_dataset.py --data safwan-training-approved.jsonl --output-dir ./safwan-dataset --validation-ratio 0.1 --seed 42
+\`\`\`
+
+This writes \`train.jsonl\` and \`validation.jsonl\`. Exact duplicate examples are removed by the dataset loader before splitting, and the split is deterministic for a fixed seed. Use the training file for learning and pass the validation file to track validation loss:
+
+\`\`\`bash
+python scripts/train_lora.py --data ./safwan-dataset/train.jsonl --validation-data ./safwan-dataset/validation.jsonl --output ./safwan-lora-adapter
+\`\`\`
+
+Validation loss is only one signal; it does not prove factual accuracy, safety, or real-world usefulness. Keep a separate human-reviewed test set that is never used for training or model selection. With a very small dataset, a validation split can be unstable; gather more diverse examples instead of treating a small score as proof of quality.

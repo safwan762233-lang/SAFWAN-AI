@@ -60,6 +60,10 @@ def init_db():
             FOREIGN KEY(document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE
         )""")
         con.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_document ON knowledge_chunks(document_id)")
+        # Safe in-place migration for databases created before semantic search.
+        chunk_columns = {row["name"] for row in con.execute("PRAGMA table_info(knowledge_chunks)")}
+        if "embedding_json" not in chunk_columns:
+            con.execute("ALTER TABLE knowledge_chunks ADD COLUMN embedding_json TEXT")
 
 
         con.execute("""CREATE TABLE IF NOT EXISTS customers (

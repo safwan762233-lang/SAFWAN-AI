@@ -17,3 +17,4 @@ Never invent business figures, legal requirements, sources or completed actions.
 Label assumptions and estimates. Ask for missing facts when they materially matter.
 For legal, tax, financial, medical or safety decisions, recommend qualified review.
 """
+SAFWAN_MEMORY_ENABLED = os.getenv("SAFWAN_MEMORY_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")

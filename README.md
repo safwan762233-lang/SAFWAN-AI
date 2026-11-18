@@ -242,3 +242,14 @@ python scripts/train_lora.py --data ./safwan-dataset/train.jsonl --validation-da
 \`\`\`
 
 Validation loss is only one signal; it does not prove factual accuracy, safety, or real-world usefulness. Keep a separate human-reviewed test set that is never used for training or model selection. With a very small dataset, a validation split can be unstable; gather more diverse examples instead of treating a small score as proof of quality.
+
+
+## Phase 14: Compare a fine-tuned adapter with its base model
+
+After training, evaluate the adapter against a held-out test file that was not used for training or model selection. Example:
+
+\`\`\`bash
+python scripts/evaluate_adapter.py --data ./safwan-dataset/validation.jsonl --adapter ./safwan-lora-adapter --model Qwen/Qwen2.5-3B-Instruct --output ./safwan-evaluation.json
+\`\`\`
+
+The script generates both base-model and adapter answers for each prompt and saves a JSON report with latency and simple token-overlap F1 against the reference answer. It requires a compatible CUDA GPU and the optional training dependencies. Review the outputs manually. Token overlap is only a rough diagnostic; it cannot determine factual correctness, safety, reasoning quality, or whether the answer is actually better. For a credible final evaluation, keep a separate untouched test set and have humans review representative Bangla, Banglish, English, and business tasks. Do not deploy an adapter based only on this score.

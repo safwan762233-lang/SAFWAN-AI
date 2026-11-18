@@ -60,6 +60,17 @@ def init_db():
             FOREIGN KEY(document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE
         )""")
         con.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_document ON knowledge_chunks(document_id)")
+        con.execute("""CREATE TABLE IF NOT EXISTS memory_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'conversation',
+            source_conversation_id INTEGER,
+            embedding_json TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(source_conversation_id) REFERENCES conversations(id) ON DELETE SET NULL
+        )""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_memory_items_created ON memory_items(created_at)")
         # Safe in-place migration for databases created before semantic search.
         chunk_columns = {row["name"] for row in con.execute("PRAGMA table_info(knowledge_chunks)")}
         if "embedding_json" not in chunk_columns:

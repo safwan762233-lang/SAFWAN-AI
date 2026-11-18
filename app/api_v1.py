@@ -12,6 +12,7 @@ from .db import connect
 from .business import get_business_context_data
 from .ollama import chat, OllamaError
 from .knowledge import search_knowledge
+from .memory import remember, search_memories
 
 router = APIRouter(tags=["SAFWAN API v1"])
 
@@ -167,8 +168,12 @@ async def chat_completions(
         context = get_business_context_data()
         last_user_message = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         matches = search_knowledge(last_user_message)
-        if matches:
-            context = {"business_data": context, "uploaded_knowledge": matches}
+        memories = search_memories(last_user_message) if last_user_message else []
+        if matches or memories:
+            context = {"business_data": context, "uploaded_knowledge": matches,
+                       "long_term_memory": memories}
+        if last_user_message:
+            remember(last_user_message, category="api_conversation")
         answer, used_model = await chat(messages, OLLAMA_MODEL, context)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))

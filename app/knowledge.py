@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from .config import OLLAMA_BASE_URL, SAFWAN_APP_TOKEN, SAFWAN_EMBEDDING_MODEL
 from .db import connect
+from .auth_core import require_admin
 
 router = APIRouter(prefix="/api/knowledge", tags=["Local knowledge"])
 
@@ -18,10 +19,7 @@ ALLOWED_TYPES = {".txt", ".md", ".pdf", ".docx"}
 
 
 def _admin_guard(authorization: Optional[str]) -> None:
-    if not SAFWAN_APP_TOKEN:
-        raise HTTPException(503, "Document management is disabled: set SAFWAN_APP_TOKEN first")
-    if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token")
 
 
 def _extract_text(filename: str, raw: bytes) -> str:

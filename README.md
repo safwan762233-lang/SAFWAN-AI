@@ -97,4 +97,12 @@ curl http://127.0.0.1:8000/v1/chat/completions \\
   -d '{"model":"safwan-local","messages":[{"role":"user","content":"Summarize my business priorities."}]}'
 ```
 
-The SAFWAN API is an application API and model gateway, not a newly trained foundation model. At this stage inference still runs on the operator's configured local/self-hosted Ollama model. Streaming, usage billing, per-key rate limits, tenant isolation, and production-grade account management are not implemented yet. Keep the service private until the security roadmap is completed.
+The SAFWAN API is an application API and model gateway, not a newly trained foundation model. At this stage inference still runs on the operator's configured local/self-hosted Ollama model. Streaming, usage billing, tenant isolation, and production-grade account management are not implemented yet. Keep the service private until the security roadmap is completed.
+
+### Usage tracking and rate limiting
+
+- `SAFWAN_API_RPM` sets the per-key request limit per rolling 60-second window (default: `60`, minimum: `1`).
+- Each authenticated request to `/v1/models` and `/v1/chat/completions` is recorded in SQLite.
+- Excess requests receive HTTP `429` with `Retry-After: 60`.
+- `GET /api/usage?hours=24` returns total requests, per-key request counts, rate-limited counts, and recent request records. It requires the master `SAFWAN_APP_TOKEN`.
+- This is an initial single-instance rate limiter backed by SQLite. For multiple server instances or public production use, move counters to a shared atomic store such as Redis and add stronger operational controls.

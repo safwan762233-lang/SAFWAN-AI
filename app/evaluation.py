@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 from .config import OLLAMA_BASE_URL, SAFWAN_APP_TOKEN
 from .db import connect
+from .auth_core import require_admin
 from .ollama import list_models, OllamaError
 
 router = APIRouter()
@@ -20,10 +21,7 @@ class CompareInput(BaseModel):
     models: list[str] = Field(default_factory=list, max_length=4)
 
 def _authorize(authorization):
-    if not SAFWAN_APP_TOKEN:
-        raise HTTPException(503, "Evaluation management is disabled: set SAFWAN_APP_TOKEN first")
-    if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Unauthorized")
+    require_admin(authorization)
 
 def score_answer(prompt, answer, expected_answer=None):
     """Heuristics only: useful signals, not a truth or factuality guarantee."""

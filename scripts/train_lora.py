@@ -149,6 +149,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=tokenized,
+        eval_dataset=validation_tokenized,
         data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
     )
     trainer.train()

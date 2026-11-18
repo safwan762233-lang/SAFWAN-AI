@@ -10,6 +10,8 @@ from .api_v1 import router as api_v1_router
 from .knowledge import router as knowledge_router, search_knowledge
 from .memory import router as memory_router, remember
 from .intelligence import build_intelligence_context
+from .model_router import get_model_usage
+from .config import SAFWAN_CODING_MODEL, SAFWAN_REASONING_MODEL, SAFWAN_FALLBACK_MODEL
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
 app.include_router(business_router)
@@ -83,6 +85,25 @@ async def send_chat(body: ChatInput, authorization: Optional[str] = Header(defau
         con.execute("INSERT INTO messages(conversation_id,role,content) VALUES(?,?,?)", (cid,"assistant",answer))
         con.execute("UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=?", (cid,))
     return {"conversation_id":cid,"answer":answer,"model":used_model}
+
+@app.get("/api/model-router/status")
+async def model_router_status(authorization: Optional[str] = Header(default=None)):
+    authorize(authorization)
+    try:
+        installed = await list_models()
+    except OllamaError as exc:
+        raise HTTPException(503, str(exc))
+    return {
+        "installed_models": installed,
+        "default_model": OLLAMA_MODEL,
+        "preferences": {
+            "coding": SAFWAN_CODING_MODEL,
+            "reasoning": SAFWAN_REASONING_MODEL,
+            "fallback": SAFWAN_FALLBACK_MODEL or None,
+        },
+        "usage": get_model_usage(),
+        "routing_note": "Specialist preferences are used only when the model is installed; otherwise the default installed model is selected.",
+    }
 
 @app.get("/api/models")
 async def models(authorization: Optional[str] = Header(default=None)):

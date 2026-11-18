@@ -6,9 +6,11 @@ from .config import SAFWAN_APP_TOKEN, OLLAMA_MODEL, OLLAMA_BASE_URL
 from .db import connect, init_db
 from .ollama import chat, list_models, OllamaError
 from .business import router as business_router, get_business_context_data
+from .api_v1 import router as api_v1_router
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
 app.include_router(business_router)
+app.include_router(api_v1_router)
 
 @app.on_event("startup")
 def startup():

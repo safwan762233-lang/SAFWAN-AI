@@ -28,6 +28,8 @@ def is_admin_authorized(authorization: Optional[str]) -> bool:
     return row is not None
 
 
-def require_admin(authorization: Optional[str], message: str = "Unauthorized") -> None:
+def require_admin(authorization: Optional[str], message: str = "Unauthorized", legacy_token: Optional[str] = None) -> None:
+    if legacy_token and authorization == f"Bearer {legacy_token}":
+        return
     if not is_admin_authorized(authorization):
         raise HTTPException(401, message)

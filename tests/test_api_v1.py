@@ -90,3 +90,19 @@ def test_per_key_rate_limit_and_usage_report(client, monkeypatch):
 
 def test_usage_report_requires_admin_token(client):
     assert client.get("/api/usage").status_code == 401
+
+
+
+def test_api_key_can_be_renamed(client):
+    admin = {"Authorization": "Bearer test-admin-secret"}
+    created = client.post(
+        "/api/keys", headers=admin, json={"name": "Original name"}
+    )
+    key_id = created.json()["id"]
+    renamed = client.patch(
+        f"/api/keys/{key_id}", headers=admin, json={"name": "Updated integration"}
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "Updated integration"
+    listed = client.get("/api/keys", headers=admin).json()
+    assert listed[0]["name"] == "Updated integration"

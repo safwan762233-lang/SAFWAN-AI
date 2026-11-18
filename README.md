@@ -140,3 +140,15 @@ The Knowledge Base supports local semantic + keyword hybrid retrieval using Olla
 5. Use the Knowledge Base search UI or ask questions in chat. Search combines cosine similarity from local embeddings with keyword overlap when vectors are available.
 
 Admin endpoint: `POST /api/knowledge/reindex` creates embeddings for older chunks that do not have them. Document listing reports `embedded_chunks`. The database stores vectors as JSON in SQLite and ranks them in Python; this is a lightweight MVP, not a dedicated vector database. If Ollama or the embedding model is unavailable, search falls back to keyword matching. Scanned PDFs still require OCR, which is not included.
+
+
+## Phase 6: Local long-term memory
+
+SAFWAN AI now has an initial single-workspace memory system stored in SQLite. It can save longer user messages from web chat and first-party API chat, retrieve related memories with local Ollama embeddings plus keyword fallback, and let the administrator add, inspect, search, and delete memories.
+
+- `SAFWAN_MEMORY_ENABLED=true` enables automatic memory capture; set it to `false` to disable automatic capture.
+- Automatic capture skips short messages and messages that appear to contain password, API-key, secret, or token assignments. This is a basic filter, not a guarantee that sensitive information will never be stored.
+- Memory management endpoints require `SAFWAN_APP_TOKEN`: `GET/POST /api/memory`, `POST /api/memory/search`, `DELETE /api/memory/{id}`, and `DELETE /api/memory` to clear all.
+- The Long-term Memory page lets an administrator review, add, search, and delete saved entries.
+- Memory is currently shared across the entire installation. It is not multi-user or tenant-isolated; do not expose it publicly or use it for multiple customers until separate accounts and access controls are implemented.
+- Memory retrieval uses the local embedding model configured by `SAFWAN_EMBEDDING_MODEL`; if embeddings are unavailable, keyword matching is used. The system does not yet perform LLM-based fact extraction or automatic summarization.

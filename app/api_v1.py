@@ -11,6 +11,7 @@ from .config import OLLAMA_MODEL, SAFWAN_APP_TOKEN, SAFWAN_API_RPM
 from .db import connect
 from .business import get_business_context_data
 from .ollama import chat, OllamaError
+from .knowledge import search_knowledge
 
 router = APIRouter(tags=["SAFWAN API v1"])
 
@@ -163,7 +164,12 @@ async def chat_completions(
         raise HTTPException(404, f"Model '{body.model}' is not available through SAFWAN AI")
     messages = [{"role": item.role, "content": item.content} for item in body.messages]
     try:
-        answer, used_model = await chat(messages, OLLAMA_MODEL, get_business_context_data())
+        context = get_business_context_data()
+        last_user_message = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        matches = search_knowledge(last_user_message)
+        if matches:
+            context = {"business_data": context, "uploaded_knowledge": matches}
+        answer, used_model = await chat(messages, OLLAMA_MODEL, context)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
     return {

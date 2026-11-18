@@ -5,6 +5,7 @@ load_dotenv()
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 SAFWAN_APP_TOKEN = os.getenv("SAFWAN_APP_TOKEN", "").strip()
+SAFWAN_API_RPM = max(1, int(os.getenv("SAFWAN_API_RPM", "60")))
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/safwan_ai.sqlite3")
 
 SYSTEM_PROMPT = """You are SAFWAN AI, a careful business assistant.

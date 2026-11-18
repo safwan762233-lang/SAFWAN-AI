@@ -165,3 +165,16 @@ The web chat and first-party API now share `app/intelligence.py` to assemble a b
 - The same context builder is used by `POST /api/chat` and `POST /v1/chat/completions`.
 
 This is prompt/context orchestration, not a separate trained reasoning model, formal fact-checker, or guarantee against hallucinations and prompt injection. Search quality depends on the configured local embedding model and keyword fallback. Inference still runs on the configured Ollama model.
+
+## Phase 8: Local model router
+
+SAFWAN can select among models already installed in the operator's Ollama instance. It classifies requests as coding, reasoning, or general work, then tries the matching configured model when available. If a preferred model is not installed, it falls back to the configured default; if an inference attempt fails, it tries the next installed candidate.
+
+Optional environment settings (each value must exactly match a name shown by the ollama list command):
+- SAFWAN_CODING_MODEL (defaults to OLLAMA_MODEL)
+- SAFWAN_REASONING_MODEL (defaults to OLLAMA_MODEL)
+- SAFWAN_FALLBACK_MODEL (optional; blank by default)
+
+The router records task, model, success/failure, and duration in the local SQLite database. The authenticated GET /api/model-router/status endpoint reports installed models, routing preferences, and usage summaries. Model preferences do not download models automatically. Install any model yourself with Ollama and confirm its exact tag with ollama list.
+
+This is lightweight keyword-based routing, not an intelligent benchmark or a guarantee that a specialist model is better. The default model remains the safe fallback. All inference stays on the configured Ollama server; SAFWAN still does not contain a newly trained foundation model.

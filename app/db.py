@@ -45,6 +45,15 @@ def init_db():
             FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE
         )""")
         con.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_key_time ON api_usage(api_key_id, created_at)")
+        con.execute("""CREATE TABLE IF NOT EXISTS model_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task TEXT NOT NULL,
+            model TEXT NOT NULL,
+            success INTEGER NOT NULL DEFAULT 0,
+            duration_ms INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_model_usage_created ON model_usage(created_at)")
         con.execute("""CREATE TABLE IF NOT EXISTS knowledge_documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT NOT NULL,

@@ -293,3 +293,20 @@ The Model Deployment page in the SAFWAN web UI provides an admin-only view of mo
 - The comparison endpoint evaluates each model sequentially. A slow model can take several minutes; this is not a throughput or load test.
 - Average scores are heuristic indicators, not factuality, safety, or benchmark measurements. Review answers manually and use a held-out test set before choosing a model for deployment.
 - Installed in Ollama means the model is available to the configured runtime; it does not prove the model is fine-tuned, correctly licensed, or production-ready.
+
+
+## Owner account authentication (Phase 17)
+
+The admin API now supports a single-workspace owner account and revocable bearer sessions.
+
+1. Configure a strong `SAFWAN_APP_TOKEN` in the server environment and keep it private.
+2. Create the first owner account once:
+   `curl -X POST http://127.0.0.1:8000/api/auth/setup -H "Authorization: Bearer YOUR_MASTER_TOKEN" -H "Content-Type: application/json" -d '{"username":"owner","password":"use-a-long-unique-password"}'`
+3. Log in:
+   `curl -X POST http://127.0.0.1:8000/api/auth/login -H "Content-Type: application/json" -d '{"username":"owner","password":"use-a-long-unique-password"}'`
+4. Use the returned `access_token` as `Authorization: Bearer SESSION_TOKEN` for protected admin endpoints.
+5. Check the session with `GET /api/auth/me`; revoke it with `POST /api/auth/logout`.
+
+Passwords are stored as PBKDF2-HMAC-SHA256 hashes with random salts. Session tokens are random, stored only as SHA-256 digests, and expire after 12 hours. The master token remains supported for administration and can be used to bootstrap the first owner account. The owner setup endpoint closes permanently after the first account is created; manual database administration is required to reset the owner account.
+
+**Important scope and security notes:** this phase adds authentication, not multi-tenant isolation. Existing business, conversations, knowledge, memory, and training data remain in one shared workspace. Do not create accounts for separate customers or expose this server publicly until ownership scoping, authorization review, rate limiting, HTTPS, secure deployment settings, and account recovery are implemented. Use HTTPS outside localhost. The bearer session token must be kept private.

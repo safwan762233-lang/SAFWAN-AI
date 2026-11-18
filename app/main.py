@@ -12,6 +12,7 @@ from .memory import router as memory_router, remember
 from .intelligence import build_intelligence_context
 from .model_router import get_model_usage
 from .evaluation import router as evaluation_router
+from .training_data import router as training_data_router
 from .config import SAFWAN_CODING_MODEL, SAFWAN_REASONING_MODEL, SAFWAN_FALLBACK_MODEL
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
@@ -20,6 +21,7 @@ app.include_router(api_v1_router)
 app.include_router(knowledge_router)
 app.include_router(memory_router)
 app.include_router(evaluation_router)
+app.include_router(training_data_router)
 
 @app.on_event("startup")
 def startup():

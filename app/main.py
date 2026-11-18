@@ -7,10 +7,12 @@ from .db import connect, init_db
 from .ollama import chat, list_models, OllamaError
 from .business import router as business_router, get_business_context_data
 from .api_v1 import router as api_v1_router
+from .knowledge import router as knowledge_router, search_knowledge
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
 app.include_router(business_router)
 app.include_router(api_v1_router)
+app.include_router(knowledge_router)
 
 @app.on_event("startup")
 def startup():
@@ -69,7 +71,11 @@ async def send_chat(body: ChatInput, authorization: Optional[str] = Header(defau
         rows = con.execute("SELECT role,content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 20", (cid,)).fetchall()
         history = [{"role":r["role"],"content":r["content"]} for r in reversed(rows)]
     try:
-        answer, used_model = await chat(history, body.model, get_business_context_data())
+        context = get_business_context_data()
+        matches = search_knowledge(body.message)
+        if matches:
+            context = {"business_data": context, "uploaded_knowledge": matches}
+        answer, used_model = await chat(history, body.model, context)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
     with connect() as con:

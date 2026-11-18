@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/memory", tags=["Long-term memory"])
 
 
 def _guard(authorization: Optional[str]) -> None:
-    require_admin(authorization, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token", SAFWAN_APP_TOKEN)
 
 
 def remember(content: str, source_conversation_id: Optional[int] = None,

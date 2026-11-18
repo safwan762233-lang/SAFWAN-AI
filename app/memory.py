@@ -7,16 +7,14 @@ from pydantic import BaseModel, Field
 
 from .config import SAFWAN_APP_TOKEN, SAFWAN_MEMORY_ENABLED
 from .db import connect
+from .auth_core import require_admin
 from .knowledge import create_embeddings, _cosine, _keyword_scores
 
 router = APIRouter(prefix="/api/memory", tags=["Long-term memory"])
 
 
 def _guard(authorization: Optional[str]) -> None:
-    if not SAFWAN_APP_TOKEN:
-        raise HTTPException(503, "Memory management is disabled: set SAFWAN_APP_TOKEN first")
-    if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token")
 
 
 def remember(content: str, source_conversation_id: Optional[int] = None,

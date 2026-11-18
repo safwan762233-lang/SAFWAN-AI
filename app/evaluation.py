@@ -115,3 +115,32 @@ def evaluation_history(limit: int = 50, authorization: str | None = Header(defau
                FROM evaluations"""
         ).fetchone()
     return {"summary": dict(summary), "items": [dict(row) for row in rows]}
+
+
+@router.get("/api/deployment/status")
+async def deployment_status(authorization: str | None = Header(default=None)):
+    """Admin-only view of installed runtime models and recorded evaluation signals."""
+    _authorize(authorization)
+    try:
+        installed = await list_models()
+    except OllamaError as exc:
+        raise HTTPException(503, str(exc))
+    with connect() as con:
+        rows = con.execute(
+            """SELECT model, COUNT(*) AS evaluations,
+                      ROUND(AVG(overall_score), 1) AS average_score,
+                      ROUND(AVG(duration_ms)) AS average_duration_ms,
+                      MAX(created_at) AS last_evaluated_at
+               FROM evaluations GROUP BY model ORDER BY evaluations DESC"""
+        ).fetchall()
+        recent = con.execute(
+            """SELECT id, model, overall_score, duration_ms, evaluation_type, created_at
+               FROM evaluations ORDER BY id DESC LIMIT 10"""
+        ).fetchall()
+    return {
+        "runtime": "connected",
+        "installed_models": installed,
+        "evaluation_summary_by_model": [dict(row) for row in rows],
+        "recent_evaluations": [dict(row) for row in recent],
+        "note": "Evaluation scores are heuristic signals only; they do not prove factual accuracy, safety, or model quality.",
+    }

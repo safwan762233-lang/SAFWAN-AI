@@ -7,6 +7,7 @@ def connect():
     path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(path)
     con.row_factory = sqlite3.Row
+    con.execute('PRAGMA foreign_keys = ON')
     return con
 
 def init_db():

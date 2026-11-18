@@ -106,3 +106,12 @@ The SAFWAN API is an application API and model gateway, not a newly trained foun
 - Excess requests receive HTTP `429` with `Retry-After: 60`.
 - `GET /api/usage?hours=24` returns total requests, per-key request counts, rate-limited counts, and recent request records. It requires the master `SAFWAN_APP_TOKEN`.
 - This is an initial single-instance rate limiter backed by SQLite. For multiple server instances or public production use, move counters to a shared atomic store such as Redis and add stronger operational controls.
+
+
+## API management dashboard
+
+The web workspace includes an API Management section. Enter the `SAFWAN_APP_TOKEN` master token to create, list, rename, and revoke API keys and review usage reports. The token is held in page memory only and is cleared when you disconnect or reload the page; do not use this dashboard on an untrusted computer. A newly created API key is displayed once—copy it immediately and store it securely.
+
+Administration endpoints:
+- `PATCH /api/keys/{id}` renames an active API key.
+- `GET /api/usage?hours=24` shows per-key request totals and recent events.

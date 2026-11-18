@@ -36,7 +36,17 @@ def init_db():
             revoked_at TEXT
         )""")
 
-        con.execute("""CREATE TABLE IF NOT EXISTS api_usage (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            api_key_id INTEGER NOT NULL,\n            endpoint TEXT NOT NULL,\n            status_code INTEGER NOT NULL,\n            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n            FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE\n        )""")\n        con.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_key_time ON api_usage(api_key_id, created_at)")\n\n        con.execute("""CREATE TABLE IF NOT EXISTS customers (
+        con.execute("""CREATE TABLE IF NOT EXISTS api_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key_id INTEGER NOT NULL,
+            endpoint TEXT NOT NULL,
+            status_code INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE
+        )""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_api_usage_key_time ON api_usage(api_key_id, created_at)")
+
+        con.execute("""CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             phone TEXT DEFAULT '',

@@ -3,12 +3,12 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 from .config import SAFWAN_APP_TOKEN
 from .db import connect
+from .auth_core import require_admin
 
 router = APIRouter(prefix="/api/business", tags=["business"])
 
 def guard(authorization: Optional[str]):
-    if SAFWAN_APP_TOKEN and authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Unauthorized")
+    require_admin(authorization)
 
 class CustomerIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)

@@ -22,7 +22,7 @@ def _digest(key: str) -> str:
 
 
 def _admin_guard(authorization: Optional[str]) -> None:
-    require_admin(authorization, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token", SAFWAN_APP_TOKEN)
 
 
 def _api_key_guard(authorization: Optional[str], endpoint: str) -> int:

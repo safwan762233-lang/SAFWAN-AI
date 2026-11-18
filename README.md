@@ -115,3 +115,15 @@ The web workspace includes an API Management section. Enter the `SAFWAN_APP_TOKE
 Administration endpoints:
 - `PATCH /api/keys/{id}` renames an active API key.
 - `GET /api/usage?hours=24` shows per-key request totals and recent events.
+
+
+## Local document knowledge (basic retrieval)
+
+The Knowledge Base section supports private uploads of TXT, Markdown, PDF, and DOCX files (10 MB maximum per file). Text is extracted locally, split into overlapping chunks, and stored in SQLite. SAFWAN AI retrieves matching chunks for a user's question and includes them as reference context in both the web chat and the first-party API chat.
+
+- `POST /api/knowledge/upload` — upload one document (master token required).
+- `GET /api/knowledge/documents` — list indexed documents.
+- `POST /api/knowledge/search` — test keyword retrieval.
+- `DELETE /api/knowledge/documents/{id}` — delete a document and its chunks.
+
+This first version uses local keyword-overlap retrieval, not vector embeddings or semantic search. Scanned/image-only PDFs may produce no extractable text; OCR is not included. Files are stored as extracted text in SQLite rather than retained as original file binaries. Do not upload sensitive documents until the deployment has proper user authentication, access controls, encryption, and backups.

@@ -152,3 +152,16 @@ SAFWAN AI now has an initial single-workspace memory system stored in SQLite. It
 - The Long-term Memory page lets an administrator review, add, search, and delete saved entries.
 - Memory is currently shared across the entire installation. It is not multi-user or tenant-isolated; do not expose it publicly or use it for multiple customers until separate accounts and access controls are implemented.
 - Memory retrieval uses the local embedding model configured by `SAFWAN_EMBEDDING_MODEL`; if embeddings are unavailable, keyword matching is used. The system does not yet perform LLM-based fact extraction or automatic summarization.
+
+
+## Phase 7: SAFWAN Intelligence Engine
+
+The web chat and first-party API now share `app/intelligence.py` to assemble a bounded context package containing the current business snapshot plus the most relevant local document and memory references.
+
+- Retrieved references are filtered by a minimum relevance score and limited to three items per source.
+- Each reference is capped at 1,800 characters to reduce irrelevant context and prompt size.
+- The system prompt explicitly treats uploaded document excerpts and saved memories as untrusted data, not instructions.
+- Conflicting references should be surfaced; the assistant is instructed not to claim independent verification or invent missing facts.
+- The same context builder is used by `POST /api/chat` and `POST /v1/chat/completions`.
+
+This is prompt/context orchestration, not a separate trained reasoning model, formal fact-checker, or guarantee against hallucinations and prompt injection. Search quality depends on the configured local embedding model and keyword fallback. Inference still runs on the configured Ollama model.

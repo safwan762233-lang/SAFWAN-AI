@@ -21,7 +21,7 @@ class CompareInput(BaseModel):
     models: list[str] = Field(default_factory=list, max_length=4)
 
 def _authorize(authorization):
-    require_admin(authorization)
+    require_admin(authorization, legacy_token=SAFWAN_APP_TOKEN)
 
 def score_answer(prompt, answer, expected_answer=None):
     """Heuristics only: useful signals, not a truth or factuality guarantee."""

@@ -9,10 +9,9 @@ from pydantic import BaseModel, Field
 
 from .config import OLLAMA_MODEL, SAFWAN_APP_TOKEN, SAFWAN_API_RPM
 from .db import connect
-from .business import get_business_context_data
 from .ollama import chat, OllamaError
-from .knowledge import search_knowledge
-from .memory import remember, search_memories
+from .memory import remember
+from .intelligence import build_intelligence_context
 
 router = APIRouter(tags=["SAFWAN API v1"])
 
@@ -165,13 +164,8 @@ async def chat_completions(
         raise HTTPException(404, f"Model '{body.model}' is not available through SAFWAN AI")
     messages = [{"role": item.role, "content": item.content} for item in body.messages]
     try:
-        context = get_business_context_data()
         last_user_message = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
-        matches = search_knowledge(last_user_message)
-        memories = search_memories(last_user_message) if last_user_message else []
-        if matches or memories:
-            context = {"business_data": context, "uploaded_knowledge": matches,
-                       "long_term_memory": memories}
+        context = build_intelligence_context(last_user_message)
         if last_user_message:
             remember(last_user_message, category="api_conversation")
         answer, used_model = await chat(messages, OLLAMA_MODEL, context)

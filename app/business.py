@@ -126,3 +126,33 @@ def sales(authorization: Optional[str] = Header(default=None)):
         rows=con.execute("""SELECT s.id,s.reference,s.status,s.total,s.created_at,c.name customer
             FROM sales s LEFT JOIN customers c ON c.id=s.customer_id ORDER BY s.id DESC LIMIT 500""").fetchall()
         return [dict(r) for r in rows]
+
+
+def get_business_context_data():
+    """Return a compact, privacy-conscious snapshot for the AI prompt."""
+    with connect() as con:
+        products = con.execute("SELECT COUNT(*) n, COALESCE(SUM(stock_qty*unit_price),0) value FROM products").fetchone()
+        customers = con.execute("SELECT COUNT(*) n FROM customers").fetchone()["n"]
+        low_stock = [dict(r) for r in con.execute(
+            "SELECT name,sku,stock_qty,low_stock_at FROM products WHERE stock_qty <= low_stock_at ORDER BY stock_qty ASC LIMIT 15"
+        )]
+        sales = con.execute("SELECT COUNT(*) n, COALESCE(SUM(total),0) total FROM sales WHERE status='confirmed'").fetchone()
+        recent = [dict(r) for r in con.execute(
+            "SELECT reference,status,total,created_at FROM sales ORDER BY id DESC LIMIT 5"
+        )]
+        low_count = con.execute("SELECT COUNT(*) n FROM products WHERE stock_qty <= low_stock_at").fetchone()["n"]
+        return {
+            "product_count": products["n"],
+            "inventory_value": round(products["value"], 2),
+            "customer_count": customers,
+            "low_stock_count": low_count,
+            "low_stock_products": low_stock,
+            "confirmed_sales_count": sales["n"],
+            "confirmed_sales_total": round(sales["total"], 2),
+            "recent_sales": recent,
+        }
+
+@router.get("/context")
+def business_context(authorization: Optional[str] = Header(default=None)):
+    guard(authorization)
+    return get_business_context_data()

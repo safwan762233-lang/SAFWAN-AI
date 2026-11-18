@@ -19,7 +19,7 @@ ALLOWED_TYPES = {".txt", ".md", ".pdf", ".docx"}
 
 
 def _admin_guard(authorization: Optional[str]) -> None:
-    require_admin(authorization, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token", SAFWAN_APP_TOKEN)
 
 
 def _extract_text(filename: str, raw: bytes) -> str:

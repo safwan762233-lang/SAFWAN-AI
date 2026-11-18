@@ -38,3 +38,28 @@ Set `OLLAMA_BASE_URL` to the private address of an Ollama server you control. Pu
 Multi-user accounts, billing, roles, audit logs, document RAG, web research with citations, voice, agent actions, and enterprise integrations are roadmap items, not working features.
 
 MIT license for this starter application. Model weights have separate licenses; verify commercial terms before selling a product that bundles or redistributes a model.
+
+
+## Business management API (v0.2)
+Working backend endpoints:
+- Dashboard metrics: product count, inventory value, low-stock count, customer count, confirmed sales.
+- Customer create/list.
+- Product create/list with unique SKU and non-negative price/stock validation.
+- Draft sales with line-item totals.
+- Explicit sale confirmation re-checks stock and deducts inventory.
+- Sales list.
+
+Interactive API documentation: `/docs`.
+- `GET /api/business/dashboard`
+- `GET/POST /api/business/customers`
+- `GET/POST /api/business/products`
+- `GET/POST /api/business/sales`
+- `POST /api/business/sales/{sale_id}/confirm`
+
+All records are stored in local SQLite. Sales remain drafts until explicitly confirmed; creating a draft does not deduct stock.
+
+## Security and deployment warning
+The default setup is for local development only. Keep it bound to `127.0.0.1`. The optional bearer token is not a complete multi-user authentication system. Do not expose this server to the public internet yet. Public deployment requires proper login/session security, HTTPS, CSRF protection, rate limiting, tenant isolation, backups, audit logs, and secrets management.
+
+## Not implemented yet
+Multi-user accounts, billing, roles, audit logs, document RAG, grounded web research with citations, voice, agent actions, native Android app, and enterprise integrations remain roadmap items, not working features.

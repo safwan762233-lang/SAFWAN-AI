@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from .config import SAFWAN_APP_TOKEN, OLLAMA_MODEL, OLLAMA_BASE_URL
 from .db import connect, init_db
 from .ollama import chat, list_models, OllamaError
-from .business import router as business_router
+from .business import router as business_router, get_business_context_data
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
 app.include_router(business_router)
@@ -67,7 +67,7 @@ async def send_chat(body: ChatInput, authorization: Optional[str] = Header(defau
         rows = con.execute("SELECT role,content FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 20", (cid,)).fetchall()
         history = [{"role":r["role"],"content":r["content"]} for r in reversed(rows)]
     try:
-        answer, used_model = await chat(history, body.model)
+        answer, used_model = await chat(history, body.model, get_business_context_data())
     except OllamaError as exc:
         raise HTTPException(503, str(exc))
     with connect() as con:
@@ -113,14 +113,17 @@ button{border:1px solid var(--line);background:#17243b;color:var(--text);border-
 textarea{flex:1;resize:vertical;min-height:52px;max-height:180px;background:transparent;border:0;outline:0;color:var(--text);font:inherit;padding:10px}.foot{max-width:850px;margin:8px auto 0;color:var(--muted);font-size:11px;text-align:center}
 @media(max-width:700px){.shell{grid-template-columns:1fr}.side{display:none}.top{padding:0 14px}#messages{padding:18px 12px}.welcome h1{font-size:29px}}
 </style></head><body><div class="shell"><aside class="side"><div><div class="brand">SAFWAN <span>AI</span></div><div class="muted">PRIVATE BUSINESS WORKSPACE</div></div>
-<button class="primary" onclick="newChat()">＋ New chat</button><div class="muted">RECENT CHATS</div><div id="history"></div><div class="muted" style="margin-top:auto">Local-first • Your model • Your data</div></aside>
+<button class="primary" onclick="newChat()">＋ New chat</button><button onclick="showChat()">AI Chat</button><button onclick="showDashboard()">▦ Business Dashboard</button><div class="muted">RECENT CHATS</div><div id="history"></div><div class="muted" style="margin-top:auto">Local-first • Your model • Your data</div></aside>
 <main class="main"><header class="top"><div><b>SAFWAN AI</b><div class="muted">Business assistant</div></div><div id="status" class="muted">Checking local AI…</div></header>
-<section id="messages"><div class="welcome"><h1>What can we build today?</h1><p>Your private business assistant for planning, customer replies, operations, sales summaries and documents. Ask in বাংলা, Banglish or English.</p></div></section>
+<section id="dashboard" style="display:none;flex:1;overflow:auto;padding:24px"><div style="max-width:1000px;margin:auto"><h2>Business Dashboard</h2><p class="muted">Live data from your SAFWAN AI business database.</p><div id="dashCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px"></div><h3>Low stock products</h3><div id="lowStock" class="bubble">Loading…</div><h3>Recent sales</h3><div id="recentSales" class="bubble">Loading…</div><button onclick="loadDashboard()">↻ Refresh data</button></div></section><section id="messages"><div class="welcome"><h1>What can we build today?</h1><p>Your private business assistant for planning, customer replies, operations, sales summaries and documents. Ask in বাংলা, Banglish or English.</p></div></section>
 <div class="composerWrap"><div class="composer"><textarea id="prompt" placeholder="Message SAFWAN AI…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea><button class="primary" onclick="send()">Send ↑</button></div><div class="foot">AI can make mistakes. Verify important business, legal and financial decisions.</div></div></main></div>
 <script>
 let cid=null;const $=x=>document.getElementById(x);
 function add(role,text){let e=document.createElement('div');e.className='msg';let a=document.createElement('div');a.className='avatar';a.textContent=role==='user'?'YOU':'S';let b=document.createElement('div');b.className='bubble';b.textContent=text;e.append(a,b);$('messages').append(e);$('messages').scrollTop=$('messages').scrollHeight;return b}
-function newChat(){cid=null;$('messages').innerHTML='<div class="welcome"><h1>What can we build today?</h1><p>Your private business assistant. Ask in বাংলা, Banglish or English.</p></div>'}
+function showChat(){$('dashboard').style.display='none';$('messages').style.display='flex'}
+function showDashboard(){$('messages').style.display='none';$('dashboard').style.display='block';loadDashboard()}
+async function loadDashboard(){try{let d=await(await fetch('/api/business/context')).json();if(!d||d.detail)throw Error(d.detail||'Could not load');let cards=[['Products',d.product_count],['Customers',d.customer_count],['Inventory value',Number(d.inventory_value).toLocaleString()],['Confirmed sales',d.confirmed_sales_count],['Sales total',Number(d.confirmed_sales_total).toLocaleString()],['Low stock',d.low_stock_count]];$('dashCards').innerHTML=cards.map(([k,v])=>`<div class="bubble"><div class="muted">${k}</div><div style="font-size:25px;font-weight:750;margin-top:8px">${v}</div></div>`).join('');$('lowStock').textContent=d.low_stock_products.length?d.low_stock_products.map(p=>`${p.name} (SKU ${p.sku}) — stock ${p.stock_qty}, alert at ${p.low_stock_at}`).join('\\n'):'No low-stock products';$('recentSales').textContent=d.recent_sales.length?d.recent_sales.map(s=>`${s.reference} • ${s.status} • ${s.total} • ${s.created_at}`).join('\\n'):'No sales yet'}catch(e){$('dashCards').textContent='Dashboard unavailable: '+e.message;$('lowStock').textContent='';$('recentSales').textContent=''}}
+function newChat(){showChat();cid=null;$('messages').innerHTML='<div class="welcome"><h1>What can we build today?</h1><p>Your private business assistant. Ask in বাংলা, Banglish or English.</p></div>'}
 async function status(){try{let d=await(await fetch('/api/health')).json();$('status').textContent=d.ollama==='connected'?'● Local AI connected':'● Ollama not connected';$('status').style.color=d.ollama==='connected'?'#39d5a0':'#ffb86b'}catch{$('status').textContent='Status unavailable'}}
 async function history(){try{let xs=await(await fetch('/api/conversations')).json();$('history').innerHTML='';xs.forEach(x=>{let b=document.createElement('button');b.className='historyItem';b.textContent=x.title;b.onclick=()=>load(x.id);$('history').append(b)})}catch{}}
 async function load(id){let d=await(await fetch('/api/conversations/'+id)).json();cid=id;$('messages').innerHTML='';d.messages.forEach(m=>add(m.role,m.content))}

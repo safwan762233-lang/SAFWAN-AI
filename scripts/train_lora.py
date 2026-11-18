@@ -41,7 +41,8 @@ def load_examples(path: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune an instruction model with LoRA")
-    parser.add_argument("--data", required=True, help="Approved JSONL export")
+    parser.add_argument("--data", required=True, help="Training JSONL export")
+    parser.add_argument("--validation-data", default="", help="Optional held-out validation JSONL")
     parser.add_argument("--output", default="./safwan-lora-adapter")
     parser.add_argument("--model", default=os.getenv("SAFWAN_TRAIN_MODEL", "Qwen/Qwen2.5-3B-Instruct"))
     parser.add_argument("--max-length", type=int, default=1024)
@@ -118,6 +119,16 @@ def main():
         return tokenizer(batch["text"], truncation=True, max_length=args.max_length)
 
     tokenized = dataset.map(tokenize, batched=True, remove_columns=["text"])
+    validation_tokenized = None
+    if args.validation_data:
+        validation_examples = load_examples(args.validation_data)
+        validation_rendered = [{"text": tokenizer.apply_chat_template(
+            item["messages"], tokenize=False, add_generation_prompt=False
+        )} for item in validation_examples]
+        validation_dataset = Dataset.from_list(validation_rendered)
+        validation_tokenized = validation_dataset.map(
+            tokenize, batched=True, remove_columns=["text"]
+        )
     training_args = TrainingArguments(
         output_dir=args.output,
         num_train_epochs=args.epochs,
@@ -126,6 +137,8 @@ def main():
         learning_rate=2e-4,
         logging_steps=5,
         save_strategy="epoch",
+        evaluation_strategy="epoch" if validation_tokenized is not None else "no",
+        load_best_model_at_end=validation_tokenized is not None,
         fp16=True,
         optim="paged_adamw_8bit",
         report_to="none",

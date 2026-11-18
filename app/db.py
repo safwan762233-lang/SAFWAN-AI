@@ -27,7 +27,7 @@ def init_db():
             FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )""")
 
-        con.execute("""CREATE TABLE IF NOT EXISTS customers (
+        con.execute("""CREATE TABLE IF NOT EXISTS api_keys (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            name TEXT NOT NULL,\n            key_prefix TEXT NOT NULL,\n            key_hash TEXT NOT NULL UNIQUE,\n            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n            revoked_at TEXT\n        )""")\n\n        con.execute("""CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             phone TEXT DEFAULT '',

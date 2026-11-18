@@ -162,7 +162,42 @@ function showTrainingData(){$('deployment').style.display='none';$('dashboard').
 function disconnectApiAdmin(){apiAdminToken='';$('apiAdminToken').value='';$('apiAdminStatus').textContent='Disconnected';$('apiKeyCreatePanel').style.display='none';$('apiKeyList').style.display='none';$('apiUsagePanel').style.display='none';$('newApiKey').textContent=''}
 async function adminApi(path,opts={}){if(!apiAdminToken)throw Error('Enter the master token and connect first');let r=await fetch(path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiAdminToken,...(opts.headers||{})}});let d=await r.json();if(!r.ok)throw Error(d.detail||'Request failed');return d}
 async function connectApiAdmin(){apiAdminToken=$('apiAdminToken').value.trim();try{await loadManagedKeys();$('apiAdminStatus').textContent='Connected to SAFWAN API administration';$('apiKeyCreatePanel').style.display='block';$('apiKeyList').style.display='block';$('apiUsagePanel').style.display='block';await loadApiUsage()}catch(e){apiAdminToken='';$('apiAdminStatus').textContent='Connection failed: '+e.message;}}
-async function loadManagedKeys(){let xs=await adminApi('/api/keys');$('apiKeyList').innerHTML='<h3>API Keys</h3>'+ (xs.length?xs.map(x=>'<div style="border-top:1px solid var(--line);padding:12px 0"><b>'+esc(x.name)+'</b><div class="muted">'+esc(x.key_prefix)+' · Created '+esc(x.created_at)+' · '+(x.revoked_at?'Revoked':'Active')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'+(!x.revoked_at?'<button onclick="renameManagedKey('+x.id+',\''+esc(x.name).replace(/\\'/g,'&#39;')+'\')">Rename</button><button onclick="revokeManagedKey('+x.id+')">Revoke</button>':'')+'</div></div>').join(''):'<p class="muted">No API keys created yet.</p>')}
+async function loadManagedKeys(){
+  const xs = await adminApi('/api/keys');
+  const root = $('apiKeyList');
+  root.innerHTML = '<h3>API Keys</h3>';
+  if (!xs.length) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = 'No API keys created yet.';
+    root.append(empty);
+    return;
+  }
+  xs.forEach(x => {
+    const row = document.createElement('div');
+    row.style.borderTop = '1px solid var(--line)';
+    row.style.padding = '12px 0';
+    const title = document.createElement('b');
+    title.textContent = x.name;
+    const info = document.createElement('div');
+    info.className = 'muted';
+    info.textContent = x.key_prefix + ' · Created ' + x.created_at + ' · ' + (x.revoked_at ? 'Revoked' : 'Active');
+    row.append(title, info);
+    if (!x.revoked_at) {
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+      const rename = document.createElement('button');
+      rename.textContent = 'Rename';
+      rename.onclick = () => renameManagedKey(x.id);
+      const revoke = document.createElement('button');
+      revoke.textContent = 'Revoke';
+      revoke.onclick = () => revokeManagedKey(x.id);
+      actions.append(rename, revoke);
+      row.append(actions);
+    }
+    root.append(row);
+  });
+}
 async function createManagedKey(e){e.preventDefault();let name=new FormData(e.target).get('name');try{let d=await adminApi('/api/keys',{method:'POST',body:JSON.stringify({name})});$('newApiKey').textContent='Copy this key now (it will not be shown again): '+d.key;e.target.reset();await loadManagedKeys()}catch(x){alert(x.message)}}
 async function renameManagedKey(id){let name=prompt('New API key name:');if(name===null)return;try{await adminApi('/api/keys/'+id,{method:'PATCH',body:JSON.stringify({name})});await loadManagedKeys()}catch(e){alert(e.message)}}
 async function revokeManagedKey(id){if(!confirm('Revoke this API key? Existing integrations using it will stop working.'))return;try{await adminApi('/api/keys/'+id,{method:'DELETE'});await loadManagedKeys();await loadApiUsage()}catch(e){alert(e.message)}}

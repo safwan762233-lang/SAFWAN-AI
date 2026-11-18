@@ -11,7 +11,7 @@ from .auth_core import require_admin
 router = APIRouter()
 
 def _authorize(authorization: Optional[str]):
-    require_admin(authorization)
+    require_admin(authorization, legacy_token=SAFWAN_APP_TOKEN)
 
 class ExampleInput(BaseModel):
     prompt: str = Field(min_length=1, max_length=12000)

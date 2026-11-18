@@ -54,6 +54,17 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )""")
         con.execute("CREATE INDEX IF NOT EXISTS idx_model_usage_created ON model_usage(created_at)")
+        con.execute("""CREATE TABLE IF NOT EXISTS evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prompt TEXT NOT NULL,
+            model TEXT NOT NULL,
+            overall_score INTEGER NOT NULL,
+            duration_ms INTEGER NOT NULL DEFAULT 0,
+            evaluation_type TEXT NOT NULL DEFAULT 'manual',
+            score_json TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_evaluations_created ON evaluations(created_at)")
         con.execute("""CREATE TABLE IF NOT EXISTS knowledge_documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT NOT NULL,

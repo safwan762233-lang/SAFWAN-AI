@@ -109,6 +109,23 @@ def list_api_keys(authorization: Optional[str] = Header(default=None)):
     return [dict(row) for row in rows]
 
 
+@router.patch("/api/keys/{key_id}", tags=["API key administration"])
+def rename_api_key(
+    key_id: int,
+    body: APIKeyCreate,
+    authorization: Optional[str] = Header(default=None),
+):
+    _admin_guard(authorization)
+    with connect() as con:
+        cur = con.execute(
+            "UPDATE api_keys SET name=? WHERE id=? AND revoked_at IS NULL",
+            (body.name.strip(), key_id),
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Active API key not found")
+    return {"id": key_id, "name": body.name.strip(), "status": "updated"}
+
+
 @router.delete("/api/keys/{key_id}", tags=["API key administration"])
 def revoke_api_key(key_id: int, authorization: Optional[str] = Header(default=None)):
     _admin_guard(authorization)

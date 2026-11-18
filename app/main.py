@@ -8,7 +8,8 @@ from .ollama import chat, list_models, OllamaError
 from .business import router as business_router, get_business_context_data
 from .api_v1 import router as api_v1_router
 from .knowledge import router as knowledge_router, search_knowledge
-from .memory import router as memory_router, remember, search_memories
+from .memory import router as memory_router, remember
+from .intelligence import build_intelligence_context
 
 app = FastAPI(title="SAFWAN AI", version="0.2.0")
 app.include_router(business_router)
@@ -74,12 +75,7 @@ async def send_chat(body: ChatInput, authorization: Optional[str] = Header(defau
         history = [{"role":r["role"],"content":r["content"]} for r in reversed(rows)]
     remember(body.message, source_conversation_id=cid)
     try:
-        context = get_business_context_data()
-        matches = search_knowledge(body.message)
-        memories = search_memories(body.message)
-        if matches or memories:
-            context = {"business_data": context, "uploaded_knowledge": matches,
-                       "long_term_memory": memories}
+        context = build_intelligence_context(body.message)
         answer, used_model = await chat(history, body.model, context)
     except OllamaError as exc:
         raise HTTPException(503, str(exc))

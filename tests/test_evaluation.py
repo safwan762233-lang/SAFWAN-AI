@@ -38,3 +38,20 @@ def test_manual_evaluation_saved_and_reported(tmp_path, monkeypatch):
     report = client.get("/api/evaluations", headers=headers)
     assert report.status_code == 200
     assert report.json()["summary"]["evaluations"] == 1
+
+
+def test_deployment_status_requires_admin_and_reports_models(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DATABASE_PATH", str(tmp_path / "deployment.sqlite3"))
+    monkeypatch.setattr(evaluation, "SAFWAN_APP_TOKEN", "admin-secret")
+    async def fake_models():
+        return ["qwen2.5:7b", "safwan-finetuned"]
+    monkeypatch.setattr(evaluation, "list_models", fake_models)
+    db.init_db()
+    client = TestClient(app)
+    assert client.get("/api/deployment/status").status_code == 401
+    response = client.get("/api/deployment/status", headers={"Authorization": "Bearer admin-secret"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["runtime"] == "connected"
+    assert "safwan-finetuned" in data["installed_models"]
+    assert data["evaluation_summary_by_model"] == []

@@ -253,3 +253,31 @@ python scripts/evaluate_adapter.py --data ./safwan-dataset/validation.jsonl --ad
 \`\`\`
 
 The script generates both base-model and adapter answers for each prompt and saves a JSON report with latency and simple token-overlap F1 against the reference answer. It requires a compatible CUDA GPU and the optional training dependencies. Review the outputs manually. Token overlap is only a rough diagnostic; it cannot determine factual correctness, safety, reasoning quality, or whether the answer is actually better. For a credible final evaluation, keep a separate untouched test set and have humans review representative Bangla, Banglish, English, and business tasks. Do not deploy an adapter based only on this score.
+
+
+## Phase 15: Prepare a trained LoRA adapter for Ollama
+
+A trained PEFT adapter is not a standalone model. The deployment-preparation script merges it into the exact original Hugging Face base model, producing a full model directory that can then be converted to GGUF and imported into Ollama. This is a manual, compute-heavy step; SAFWAN does not automatically train, merge, convert, or deploy models.
+
+**Important:** use the exact base model (and, ideally, the same model revision) used during fine-tuning. The current training script uses QLoRA 4-bit; merging reloads the base model in FP16 and therefore needs a compatible NVIDIA CUDA environment, substantial VRAM/RAM, and several GB of free disk space. It deliberately refuses CPU-only merging. The script does not change or delete the original adapter.
+
+1. Copy the trained adapter folder and its original model name to a Linux CUDA machine.
+2. Install a PyTorch build matching that machine's CUDA setup, then install `requirements-training.txt`.
+3. Check the paths without loading the model:
+   `python scripts/merge_lora_adapter.py --adapter ./safwan-lora-adapter --model Qwen/Qwen2.5-3B-Instruct --output ./safwan-merged-model --validate-only`
+4. Merge the adapter:
+   `python scripts/merge_lora_adapter.py --adapter ./safwan-lora-adapter --model Qwen/Qwen2.5-3B-Instruct --output ./safwan-merged-model`
+5. Install llama.cpp using its current official instructions. Convert the merged Hugging Face directory to an FP16 GGUF:
+   `python convert_hf_to_gguf.py ./safwan-merged-model --outfile ./safwan-merged-f16.gguf --outtype f16`
+   Run the converter from the llama.cpp checkout; the script path may be `./convert_hf_to_gguf.py` depending on your working directory. Check that the architecture is supported by your llama.cpp version.
+6. On the machine running Ollama, create a text file named `Modelfile` containing the absolute path to the GGUF:
+   ```text
+   FROM /absolute/path/to/safwan-merged-f16.gguf
+   PARAMETER temperature 0.35
+   ```
+7. Create and test the Ollama model:
+   `ollama create safwan-finetuned -f Modelfile`
+   `ollama run safwan-finetuned`
+8. After confirming the model works, set `OLLAMA_MODEL=safwan-finetuned` in SAFWAN's `.env`. Restart SAFWAN AI. The existing model router will use this installed model as its general/default model; coding and reasoning preferences can be set to the same exact Ollama model name if desired.
+
+GGUF conversion/import compatibility depends on the model architecture and llama.cpp/Ollama versions. Do not assume that a Qwen adapter can be loaded directly through Ollama's Safetensors ADAPTER path: the documented Safetensors adapter architecture list is limited, and adapter support may differ by Ollama release. The merged GGUF route avoids depending on direct adapter loading. Keep the base model, adapter, merged model, and GGUF until deployment and evaluation are complete. Re-run the held-out evaluation and human review after conversion; successful import does not prove the fine-tune is better. Check the base model's license before commercial use or redistribution.

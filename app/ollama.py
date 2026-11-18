@@ -13,10 +13,13 @@ async def list_models():
     except Exception as exc:
         raise OllamaError(f"Cannot reach Ollama at {OLLAMA_BASE_URL}: {exc}") from exc
 
-async def chat(messages, model=None):
+async def chat(messages, model=None, business_context=None):
     payload = {
         "model": model or OLLAMA_MODEL,
-        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *messages],
+        "messages": [{"role": "system", "content": SYSTEM_PROMPT + (
+            "\n\nCURRENT BUSINESS DATA (authoritative snapshot; do not invent missing values):\n" + __import__("json").dumps(business_context, ensure_ascii=False)
+            if business_context is not None else ""
+        )}, *messages],
         "stream": False,
         "options": {"temperature": 0.35}
     }

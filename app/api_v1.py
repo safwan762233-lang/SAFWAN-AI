@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from .config import OLLAMA_MODEL, SAFWAN_APP_TOKEN, SAFWAN_API_RPM
 from .db import connect
+from .auth_core import require_admin
 from .ollama import chat, OllamaError
 from .memory import remember
 from .intelligence import build_intelligence_context
@@ -21,10 +22,7 @@ def _digest(key: str) -> str:
 
 
 def _admin_guard(authorization: Optional[str]) -> None:
-    if not SAFWAN_APP_TOKEN:
-        raise HTTPException(503, "API key administration is disabled: set SAFWAN_APP_TOKEN first")
-    if authorization != f"Bearer {SAFWAN_APP_TOKEN}":
-        raise HTTPException(401, "Invalid admin token")
+    require_admin(authorization, "Invalid admin token")
 
 
 def _api_key_guard(authorization: Optional[str], endpoint: str) -> int:
